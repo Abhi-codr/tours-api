@@ -1,8 +1,8 @@
-const fs = require("fs").promises
+const Tour = require("../models/tourModel")
 
 const getAllTours = async(req, res) => {
     try {
-        const tours = JSON.parse(await fs.readFile("../dev-data/data/tours-simple.json", "utf-8"))
+        const tours = await Tour.find({})
         res.status(200).json({ status: "success", data: { tours } })
     } catch (err) {
         res.status(400).json({ status: "failure", message: "data not found", err })
@@ -12,8 +12,7 @@ const getAllTours = async(req, res) => {
 const getOneTour = async(req, res) => {
     const tourId = req.params.id
     try {
-        const tours = JSON.parse(await fs.readFile("../dev-data/data/tours-simple.json", "utf-8"))
-        const tourFound = tours.find(tour => tour.id == tourId)
+        const tourFound = await Tour.findById(tourId)
         if (!tourFound) throw new Error("tour not found")
         res.status(200).json({ status: "success", data: { tour: tourFound } })
     } catch (err) {
@@ -22,12 +21,8 @@ const getOneTour = async(req, res) => {
 }
 
 const createTour = async(req, res) => {
-    const tourId = req.params.id
     try {
-        let tours = JSON.parse(await fs.readFile("../dev-data/data/tours-simple.json", "utf-8"))
-        const newTour = {...req.body, ... { id: tours[tours.length - 1].id + 1 } }
-        tours.push(newTour);
-        await fs.writeFile("./dev-data/data/tours-simple.json", JSON.stringify(tours))
+        let newTour = await Tour.create(req.body)
         res.status(200).json({
             status: "success",
             data: { tour: newTour }
@@ -38,19 +33,20 @@ const createTour = async(req, res) => {
 }
 
 const updateTour = async(req, res) => {
+    const tourId = req.params.id
     try {
-        //Some updating operation
-        const tours = {}
-        res.status(200).json({ status: "success", data: { tours } })
+        await Tour.findByIdAndUpdate(tourId, req.body)
+        res.status(200).json({ status: "success", message: "tour updated" })
     } catch (err) {
-        res.status(400).json({ status: "failure", message: "data not found" })
+        res.status(400).json({ status: "failure", message: "tour not modified" })
     }
 }
 
 const deleteTour = async(req, res) => {
+    const tourId = req.params.id
     try {
-        //Some deletion operation
-        res.status(200).json({ status: "success" })
+        await Tour.deleteOne({ _id: tourId })
+        res.status(200).json({ status: "success", message: "tour deleted" })
     } catch (err) {
         res.status(400).json({ status: "failure", message: "tour not deleted" })
     }
