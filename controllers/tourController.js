@@ -1,45 +1,12 @@
 const Tour = require("../models/tourModel");
+const APIFeatures = require("../utils/apiFeatures");
 
 const getAllTours = async (req, res) => {
   try {
     const queryObj = req.query;
-    const filterObj = { ...queryObj };
-    const excludedFields = ["page", "sort", "limit", "fields", "_id"];
-    excludedFields.map((excField) => delete filterObj[excField]);
-    //Checking if filter has value
-    Object.keys(filterObj).map((filterKey) =>
-      !filterObj[filterKey] ? delete filterObj[filterKey] : ""
-    );
+    const features = new APIFeatures(Tour.find(), queryObj).filter().sort().limitFields().paginate()
 
-    //Adding filters
-    const query = Tour.find(filterObj);
-
-    //Adding Sort
-    if (queryObj.sort && queryObj.sort.trim()) {
-      const sortStr = queryObj.sort.trim().replace(",", " ");
-      query.sort(sortStr);
-    }
-
-    //Adding Field Select
-    if (queryObj.fields && queryObj.fields.trim()) {
-      const fieldStr = queryObj.fields.trim().replace(",", " ");
-      query.select(fieldStr);
-    }
-
-    //Adding pagination
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 50;
-    const skip = (page - 1) * limit;
-
-    if (queryObj.page) {
-      const tourCount = await Tour.countDocuments();
-      if (skip > tourCount) throw new Error("page does not exist");
-    }
-
-    query.skip(skip).limit(limit);
-
-    //Querying tours
-    const tours = await query;
+    const tours = await features.query;
     res
       .status(200)
       .json({ status: "success", data: { tours, count: tours.length } });
